@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>zone</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/VcNNcDXy/icon-192.jpg">
+    <meta name="theme-color" content="#2A3440" id="theme-color-meta">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg-color: #f0f0f0; --text-color: #333; --header-bg: rgba(240, 240, 240, 0.9);
+            --card-bg: #ffffff; --btn-bg: #e0e0e0; --btn-hover-bg: #cccccc;
+            --accent-color: #00BCD4; --strong-text: #fff; --accent-text-color: #fff;
+            --shadow-color-light: rgba(0,0,0,0.08); --shadow-color-strong: rgba(0, 0, 0, 0.16);
+            --border-color: #e0e0e0; --dynamic-border-color: rgba(0, 0, 0, 0.1);
+            --ripple-color: rgba(0, 0, 0, 0.1);
+        }
+        body.premium-mode {
+            --bg-color: #2A3440; --text-color: #E1EBF0; --header-bg: rgba(42, 52, 64, 0.85);
+            --card-bg: #374151; --btn-bg: #4B5563; --btn-hover-bg: #6B7280;
+            --strong-text: #fff; --accent-text-color: #fff;
+            --shadow-color-light: rgba(255,255,255,0.08); --shadow-color-strong: rgba(0, 0, 0, 0.5);
+            --border-color: #4B5563; --dynamic-border-color: rgba(255, 255, 255, 0.2);
+            --ripple-color: rgba(255, 255, 255, 0.1);
+        }
+        body.dark-mode {
+            --bg-color: #000000; --text-color: #E1EBF0; --header-bg: rgba(18, 18, 18, 0.85);
+            --card-bg: #1C1C1E; --btn-bg: #2C2C2E; --btn-hover-bg: #3A3A3C;
+            --strong-text: #fff; --accent-text-color: #fff;
+            --shadow-color-light: rgba(255,255,255,0.08); --shadow-color-strong: rgba(0, 0, 0, 0.5);
+            --border-color: #2C2C2E; --dynamic-border-color: rgba(255, 255, 255, 0.2);
+            --ripple-color: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        @keyframes animateGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-size: 400% 400%; z-index: -2; opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none;
+        }
+        body.live-background-on.anim-gradient::before {
+            background-image: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            animation: animateGradient 15s ease infinite;
+        }
+        body.live-background-on::before { opacity: 1; }
+        #background-blur-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+            z-index: -1; display: none; pointer-events: none;
+        }
+        body.dynamic-look { background-color: transparent; }
+        body.dynamic-look #background-blur-layer { display: block; }
+        #main-header { position: sticky; top: 0; z-index: 1000; background-color: var(--header-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding-top: 8px; will-change: background-color; }
+        .header-bar { display: flex; align-items: center; padding: 0 15px; gap: 8px; max-width: 1600px; margin: 0 auto; }
+        .header-icon-btn { background-color: transparent; border: none; padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background-color 0.2s ease, transform 0.1s ease-out; flex-shrink: 0; }
+        .header-icon-btn:active { transform: scale(0.92); }
+        .header-icon-btn svg { width: 28px; height: 28px; transition: transform 0.3s ease-in-out; }
+        .header-icon-btn.active svg { transform: rotate(90deg); }
+        .header-icon-btn svg path { stroke: var(--text-color); }
+        .category-container { display: flex; overflow-x: auto; padding: 4px 15px 12px 0; -ms-overflow-style: none; scrollbar-width: none; }
+        .category-container::-webkit-scrollbar { display: none; }
+        .category-btn { padding: 6px 16px; margin-right: 10px; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; border: 1px solid transparent; border-radius: 12px; background-color: var(--card-bg); color: var(--text-color); cursor: pointer; white-space: nowrap; transition: all 0.25s ease-in-out; flex-shrink: 0; box-shadow: 0 3px 10px var(--shadow-color-light); will-change: transform, background-color; }
+        .category-btn.active { background-color: var(--accent-color); color: var(--accent-text-color); box-shadow: 0 5px 15px var(--shadow-color-strong); }
+        #wallpaper-container { display: grid; gap: 15px; padding: 8px 15px 15px 15px; max-width: 1600px; margin: 0 auto; }
+        body.threedee-mode .wallpaper-item { perspective: 1000px; }
+        #wallpaper-container[data-layout="auto"] { grid-template-columns: repeat(2, 1fr); }
+        @media (min-width: 768px) { #wallpaper-container[data-layout="auto"] { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
+        #wallpaper-container[data-layout="1"] { grid-template-columns: 1fr; }
+        #wallpaper-container[data-layout="2"] { grid-template-columns: repeat(2, 1fr); }
+        #wallpaper-container[data-layout="3"] { grid-template-columns: repeat(3, 1fr); }
+        #wallpaper-container[data-layout="4"] { grid-template-columns: repeat(4, 1fr); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .wallpaper-item { display: flex; flex-direction: column; align-items: center; width: 100%; opacity: 0; }
+        .wallpaper-item.animate-entry { animation: fadeInUp 0.5s ease-out forwards; }
+        .wallpaper-image-wrapper { position: relative; width: 100%; padding-bottom: 177.77%; background-color: var(--btn-bg); border-radius: 12px; overflow: hidden; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; transform: translateZ(0); will-change: transform; transition: transform 0.2s ease-out, box-shadow 0.3s ease; }
+        .wallpaper-image-wrapper:active { transform: scale(0.98) translateZ(0); }
+        .wallpaper-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease-out; will-change: opacity; }
+        .wallpaper-image-wrapper img.loaded { opacity: 1; }
+        .download-btn { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: var(--btn-bg); border: none; border-radius: 12px; padding: 8px; cursor: pointer; text-decoration: none; transition: background-color 0.3s ease; width: 100%; margin-top: 8px; font-weight: 500; min-height: 40px; box-sizing: border-box; }
+        .download-btn svg { width: 24px; height: 24px; transition: transform 0.3s ease; }
+        .download-btn .btn-spinner { animation: spin 1s linear infinite; }
+        .download-btn svg path { fill: var(--text-color); }
+        .download-btn:disabled { opacity: 0.7; pointer-events: none; }
+        .modal { display: flex; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.95); opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
+        .modal.show { opacity: 1; pointer-events: auto; }
+        .modal-view-container { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 15px 0; box-sizing: border-box; }
+        .modal-image-container { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; touch-action: pan-y pinch-zoom; }
+        .modal-content { max-width: 100%; max-height: 100%; border-radius: 12px; object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease-in-out; }
+        .modal.show .modal-content { transform: scale(1); }
+        .close-btn { position: absolute; top: 15px; right: 15px; color: #000; background-color: rgba(255, 255, 255, 0.7); border-radius: 50%; cursor: pointer; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; z-index: 1002; transition: transform 0.2s ease; }
+        .close-btn svg { width: 24px; height: 24px; }
+        #modal-controls { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1002; }
+        .modal-action-btn { background-color: rgba(255, 255, 255, 0.8); border: none; border-radius: 20px; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; color: #333; transition: transform 0.2s; }
+        .modal-action-btn:active:not(:disabled) { transform: scale(0.95); }
+        .modal-action-btn svg { width: 20px; height: 20px; }
+        .modal-action-btn .btn-spinner { animation: spin 1s linear infinite; }
+        .modal-action-btn:disabled { opacity: 0.7; pointer-events: none; }
+        #set-wallpaper-btn { display: none; }
+        #thumbnail-container { flex-shrink: 0; height: 100px; padding: 10px 15px; box-sizing: border-box; display: flex; overflow-x: auto; gap: 10px; scrollbar-width: none; -ms-overflow-style: none; }
+        #thumbnail-container::-webkit-scrollbar { display: none; }
+        .thumbnail-img { height: 80px; width: auto; min-width: 45px; border-radius: 8px; cursor: pointer; opacity: 0.6; transition: all 0.2s ease-in-out; border: 2px solid transparent; background-color: var(--btn-bg); transform: translateZ(0); }
+        .thumbnail-img.active { opacity: 1; border-color: var(--accent-color); transform: scale(1.05) translateZ(0); }
+        .skeleton { background-color: var(--btn-bg); border-radius: 12px; position: relative; overflow: hidden; }
+        .skeleton::after { content: ''; position: absolute; top: 0; left: -150%; width: 150%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent); animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 100% { left: 150%; } }
+        .wallpaper-item-skeleton { display: flex; flex-direction: column; width: 100%; gap: 8px; }
+        .wallpaper-item-skeleton .image-placeholder { width: 100%; padding-bottom: 177.77%; }
+        .wallpaper-item-skeleton .text-placeholder { width: 100%; height: 40px; }
+        #back-to-top-btn { display: none; position: fixed; bottom: 25px; right: 25px; z-index: 100; border: none; outline: none; background-color: var(--accent-color); color: var(--strong-text); cursor: pointer; padding: 12px; border-radius: 50%; box-shadow: 0 4px 12px var(--shadow-color-strong); width: 50px; height: 50px; opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: translateY(100px); }
+        #back-to-top-btn.show { display: flex; align-items: center; justify-content: center; opacity: 1; transform: translateY(0); }
+        #loading-indicator { padding: 20px 15px; text-align: center; display: none; }
+        .loader-spinner { border: 4px solid var(--btn-bg); border-top: 4px solid var(--text-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #options-panel { position: fixed; top: 75px; left: 15px; right: 15px; background-color: var(--card-bg); border: 1px solid transparent; border-radius: 12px; box-shadow: 0 10px 35px var(--shadow-color-strong); padding: 15px; z-index: 1100; transform: scale(0.95) translateY(-20px); opacity: 0; pointer-events: none; transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); will-change: transform, opacity; max-height: calc(100vh - 95px); overflow-y: auto; }
+        #options-panel.show { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+        #close-options-btn { position: sticky; top: -1px; right: -1px; margin-left: auto; background: var(--card-bg); border: none; cursor: pointer; padding: 8px; border-radius: 50%; color: var(--text-color); z-index: 1101; display: block; width: 44px; height: 44px; margin-bottom: -44px; }
+        #close-options-btn svg { width: 28px; height: 28px; display: block; margin: 0 auto;}
+        .options-section { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); } .options-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .options-title { font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: var(--text-color); }
+        .options-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .option-btn { padding: 8px 14px; font-size: 15px; border-radius: 8px; border: 1px solid var(--border-color); background-color: transparent; color: var(--text-color); cursor: pointer; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+        .option-btn:active { transform: scale(0.95); }
+        .option-btn.active-btn-style { background-color: var(--accent-color); color: var(--strong-text); border-color: var(--accent-color); }
+        .options-group-full-width { flex-wrap: nowrap; }
+        .options-group-full-width .option-btn { flex-grow: 1; }
+        .option-btn.icon-btn { width: auto; height: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 6px; gap: 5px; font-size: 13px; font-weight: 500; }
+        .option-btn.icon-btn svg { width: 24px; height: 24px; }
+        .ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple-animation 0.6s linear; background-color: var(--ripple-color); pointer-events: none; }
+        @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
+        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+        .toast { padding: 12px 20px; border-radius: 25px; color: #fff; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s ease-in-out; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background-color: #28a745; }
+        .toast.error { background-color: #dc3545; }
+        .download-btn, .modal-action-btn, .category-btn, .header-icon-btn, .option-btn { position: relative; overflow: hidden; }
+        body.dynamic-look #main-header, body.dynamic-look .wallpaper-image-wrapper { background-color: transparent; border-color: var(--dynamic-border-color); }
+        body.dynamic-look #options-panel, body.dynamic-look #back-to-top-btn, body.dynamic-look .download-btn { background-color: rgba(255, 255, 255, 0.4); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-color: var(--dynamic-border-color); color: #000;}
+        body.dynamic-look .download-btn svg path { fill: #000; }
+        body.premium-mode.dynamic-look #options-panel, body.premium-mode.dynamic-look #back-to-top-btn, body.premium-mode.dynamic-look .download-btn,
+        body.dark-mode.dynamic-look #options-panel, body.dark-mode.dynamic-look #back-to-top-btn, body.dark-mode.dynamic-look .download-btn { background-color: rgba(28, 28, 30, 0.7); color: #fff; }
+        body.premium-mode.dynamic-look .download-btn svg path, body.dark-mode.dynamic-look .download-btn svg path { fill: #fff; }
+        body.premium-mode.dynamic-look .header-icon-btn, body.dark-mode.dynamic-look .header-icon-btn { background-color: transparent; }
+        .color-btn { width: 28px; height: 28px; border-radius: 50%; padding: 0; border-width: 2px; }
+        .color-btn.active-btn-style { box-shadow: 0 0 0 2px var(--bg-color), 0 0 0 4px var(--accent-color); transform: scale(1.1); background-color: var(--color) !important; border-color: var(--bg-color); }
+        #eye-protect-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(255, 159, 0, 0.15); z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.4s ease-in-out; }
+        body.eye-protect-on #eye-protect-overlay { opacity: 1; }
+        #wallpaper-container.single-item-layout { grid-template-columns: 1fr !important; max-width: 500px; margin: 0 auto; }
+    </style>
+</head>
+<body class="premium-mode">
+    <div id="background-blur-layer"></div>
+    <div id="eye-protect-overlay"></div>
+    <header id="main-header">
+        <div class="header-bar">
+            <button class="header-icon-btn" id="options-menu-btn" aria-label="Options menu">
+                <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3V5M15 3V5M9 19V21M15 19V21M5 9H3M5 15H3M21 9H19M21 15H19M7 19H17C18.1046 19 19 18.1046 19 17V7C19 5.89543 18.1046 5 17 5H7C5.89543 5 5 5.89543 5 7V17C5 18.1046 5.89543 19 7 19ZM9 9H15V15H9V9Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+            </button>
+            <div class="category-container"></div>
+        </div>
+    </header>
+    <div id="options-panel">
+        <button id="close-options-btn" aria-label="Close options">
+            <svg fill="currentColor" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5  c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4  C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"/>
+            </svg>
+        </button>
+        <div class="options-section">
+            <p class="options-title">Supermode</p>
+            <div class="options-group options-group-full-width">
+                <button class="option-btn icon-btn" data-supermode="reset">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 12C17 14.7614 14.7614 17 12 17M17 12C17 9.23858 14.7614 7 12 7M17 12H19M12 17C9.23858 17 7 14.7614 7 12M12 17V19M7 12C7 9.23858 9.23858 7 12 7M7 12H5M12 7V5M14 12C14 13.1046 13.1046 14 12 14C10.8954 14 10 13.1046 10 12C10 10.8954 10.8954 10 12 10C13.1046 10 14 10.8954 14 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span>Reset</span>
+                </button>
+                <button class="option-btn icon-btn" data-supermode="dynamicDark">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <defs><style>.cls-1{fill:#4285f4;}.cls-2{fill:#669df6;}.cls-3{fill:#aecbfa;}</style></defs>
+                        <g data-name="Product Icons"><path class="cls-1" d="M18.23,6.24A9.61,9.61,0,0,0,12.08,4C7.24,4,3.11,7.65,2,12.9a.81.81,0,1,0,1.58.35v0C4.53,8.74,8,5.6,12.08,5.6A7.86,7.86,0,0,1,16.53,7Z"/><path class="cls-1" d="M18.67,7.53l-5.88,2.63h0a2,2,0,1,0,1.13,2.58,1.83,1.83,0,0,0,.12-.46.1.1,0,0,0,.05,0l5-4C19.68,7.74,19.36,7.22,18.67,7.53Z"/><circle class="cls-2" cx="20.04" cy="9.99" r="0.84"/><circle class="cls-3" cx="21.16" cy="13.04" r="0.84"/></g>
+                    </svg>
+                    <span>Dynamic</span>
+                </button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Theme</p>
+            <div class="options-group">
+                <button class="option-btn" data-theme="light">Light</button>
+                <button class="option-btn" data-theme="premium">Premium</button>
+                <button class="option-btn" data-theme="dark">Dark</button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Eye Protec Model</p>
+            <div class="options-group">
+                <button class="option-btn" data-eye-protect="auto">Auto</button>
+                <button class="option-btn" data-eye-protect="on">Eye protec</button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Color Theme</p>
+            <div class="options-group">
+                <button class="option-btn color-btn" data-color="#00BCD4"></button>
+                <button class="option-btn color-btn" data-color="#007aff"></button>
+                <button class="option-btn color-btn" data-color="#28a745"></button>
+                <button class="option-btn color-btn" data-color="#dc3545"></button>
+                <button class="option-btn color-btn" data-color="#6f42c1"></button>
+                <button class="option-btn color-btn" data-color="#fd7e14"></button>
+                <button class="option-btn color-btn" data-color="#20c997"></button>
+                <button class="option-btn color-btn" data-color="#d63384"></button>
+                <button class="option-btn color-btn" data-color="#ffc107"></button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Columns</p>
+            <div class="options-group">
+                <button class="option-btn" data-columns="auto">Auto</button>
+                <button class="option-btn" data-columns="1">1x</button>
+                <button class="option-btn" data-columns="2">2x</button>
+                <button class="option-btn" data-columns="3">3x</button>
+                <button class="option-btn" data-columns="4">4x</button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">3D Look</p>
+            <div class="options-group">
+                <button class="option-btn" data-3dlook="default">Default</button>
+                <button class="option-btn" data-3dlook="enabled">3D Look</button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Dynamic Look</p>
+            <div class="options-group">
+                <button class="option-btn" data-dynamic-look="general">General</button>
+                <button class="option-btn" data-dynamic-look="dynamic">Dynamic</button>
+            </div>
+        </div>
+        <div class="options-section" id="dynamic-animation-section">
+            <p class="options-title">Live Animation Mood</p>
+            <div class="options-group">
+                <button class="option-btn" data-animation="none">Static</button>
+                <button class="option-btn" data-animation="gradient">Gradient</button>
+                <button class="option-btn" data-animation="stars">Stars</button>
+            </div>
+        </div>
+        <div class="options-section">
+            <p class="options-title">Data Saver</p>
+            <div class="options-group">
+                <button class="option-btn" data-saver="default">Default</button>
+                <button class="option-btn" data-saver="enabled">80% Save</button>
+            </div>
+        </div>
+    </div>
+    <main id="wallpaper-container" data-layout="auto"></main>
+    <div id="loading-indicator"><div class="loader-spinner"></div></div>
+    <div id="preview-modal" class="modal">
+        <div class="modal-view-container">
+            <div class="modal-image-container" id="modal-swipe-area">
+                <span class="close-btn"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="currentColor" d="M24.879 2.879A3 3 0 1 1 29.12 7.12l-8.79 8.79a.125.125 0 0 0 0 .177l8.79 8.79a3 3 0 1 1-4.242 4.243l-8.79-8.79a.125.125 0 0 0-.177 0l-8.79 8.79a3 3 0 1 1-4.243-4.242l8.79-8.79a.125.125 0 0 0 0-.177l-8.79-8.79A3 3 0 0 1 7.12 2.878l8.79 8.79a.125.125 0 0 0 .177 0l8.79-8.79Z"/></svg></span>
+                <img class="modal-content" id="modal-image">
+                <div id="modal-controls">
+                    <button id="modal-download-btn" class="modal-action-btn"></button>
+                    <button id="set-wallpaper-btn" class="modal-action-btn"></button>
+                </div>
+            </div>
+            <div id="thumbnail-container"></div>
+        </div>
+    </div>
+    <button id="back-to-top-btn" title="Go to top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6l-6 6z"/></svg></button>
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const config = {
+                API_BASE_URL: "https://wps-api.simanto-developer.workers.dev",
+                IMAGE_BASE_URL: "https://pub-13c535a0207944d78512846a9bcc013e.r2.dev", 
+                WALLPAPERS_PER_LOAD: 12,
+            };
+
+            const state = {
+                currentCategory: null,
+                currentWallpapers: [],
+                displayedWallpapers: [],
+                renderedCount: 0,
+                isLoading: false,
+                currentModalIndex: -1,
+                touchStartX: 0,
+                touchEndX: 0,
+                preferences: { theme: 'premium', layout: 'auto', threedee: 'default', dataSaver: 'default', dynamicLook: 'general', dynamicAnimation: 'none', colorTheme: '#00BCD4', eyeProtect: 'auto' },
+                isScrolling: false,
+                isMouseMoving: false,
+                lastMouseEvent: null,
+            };
+
+            const ICONS = {
+                download: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1792 1792"><path fill="currentColor" d="M1344 1344q0-26-19-45t-45-19-45 19-19 45 19 45 45 19 45-19 19-45zm256 0q0-26-19-45t-45-19-45 19-19 45 19 45 45 19 45-19 19-45zm128-224v320q0 40-28 68t-68 28H160q-40 0-68-28t-28-68v-320q0-40 28-68t68-28h465l135 136q58 56 136 56t136-56l136-136h464q40 0 68 28t28 68zm-325-569q17 41-14 70l-448 448q-18 19-45 19t-45-19L403 621q-31-29-14-70 17-39 59-39h256V64q0-26 19-45t45-19h256q26 0 45 19t19 45v448h256q42 0 59 39z"></path></svg>`,
+                setWallpaper: `<svg viewBox="2 2 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.7212 7.34884C15.7212 8.37634 14.8883 9.2093 13.8608 9.2093C12.8333 9.2093 12.0003 8.37634 12.0003 7.34884C12.0003 6.32133 12.8333 5.48837 13.8608 5.48837C14.8883 5.48837 15.7212 6.32133 15.7212 7.34884Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M16.0856 2.10839C15.2792 1.99997 14.2538 1.99998 12.9816 2H11.019C9.74685 1.99998 8.72144 1.99997 7.91496 2.10839C7.07765 2.22097 6.37266 2.4618 5.81274 3.02172C5.25281 3.58164 5.01198 4.28664 4.89941 5.12395C4.79098 5.93043 4.791 6.95585 4.79102 8.22802V15.772C4.791 17.0442 4.79098 18.0696 4.89941 18.876C5.01198 19.7134 5.25281 20.4184 5.81274 20.9783C6.37266 21.5382 7.07765 21.779 7.91496 21.8916C8.72144 22 9.74686 22 11.019 22H12.9816C14.2538 22 15.2792 22 16.0856 21.8916C16.923 21.779 17.628 21.5382 18.1879 20.9783C18.7478 20.4184 18.9886 19.7134 19.1012 18.876C19.2096 18.0696 19.2096 17.0441 19.2096 15.772V8.22803C19.2096 6.95585 19.2096 5.93044 19.1012 5.12395C18.9886 4.28664 18.7478 3.58164 18.1879 3.02172C17.628 2.4618 16.923 2.22097 16.0856 2.10839ZM16.8088 16.6302L17.7949 17.6708C17.8137 17.134 17.8142 16.4954 17.8142 15.7209V8.27907C17.8142 6.9438 17.8114 6.01253 17.7183 5.30988C17.6265 4.6273 17.4587 4.26584 17.2012 4.00838C16.9438 3.75093 16.5823 3.58307 15.8997 3.4913C15.1971 3.39683 14.2658 3.39535 12.9305 3.39535H11.0701C9.73481 3.39535 8.80354 3.39683 8.10089 3.4913C7.41831 3.58307 7.05685 3.75093 6.79939 4.00838C6.54194 4.26584 6.37408 4.6273 6.28231 5.30988C6.18784 6.01253 6.18636 6.9438 6.18636 8.27907V12.904L6.18966 12.9007C7.10649 11.96 8.52488 12.0245 9.37301 13.019L12.3133 16.4668C12.5488 16.7429 12.8587 16.7555 13.0964 16.5596L13.3008 16.3912C14.3767 15.5045 15.852 15.6204 16.8088 16.6302Z" fill="currentColor"/><g opacity="0.5"><path d="M5.01606 4.5H5C4.5355 4.5 4.30325 4.5 4.10891 4.53078C3.03918 4.70021 2.20021 5.53918 2.03078 6.60891C2 6.80325 2 7.0355 2 7.5V16.5C2 16.9645 2 17.1968 2.03078 17.3911C2.20021 18.4608 3.03918 19.2998 4.10891 19.4692C4.30325 19.5 4.5355 19.5 5 19.5H5.01606C4.96635 19.301 4.92858 19.093 4.89941 18.876C4.79098 18.0696 4.791 17.0442 4.79102 15.772V8.22802C4.791 6.95585 4.79098 5.93043 4.89941 5.12395C4.92858 4.90701 4.96635 4.69895 5.01606 4.5Z" fill="currentColor"/><path d="M18.9845 19.5C19.0343 19.301 19.072 19.093 19.1012 18.876C19.2096 18.0696 19.2096 17.0442 19.2096 15.772V8.22803C19.2096 6.95588 19.2096 5.93042 19.1012 5.12395C19.072 4.90701 19.0343 4.69895 19.9845 4.5H19C19.4645 4.5 19.6968 4.5 19.8911 4.53078C20.9608 4.70021 21.7998 5.53918 21.9692 6.60891C22 6.80325 22 7.0355 22 7.5V16.5C22 16.9645 22 17.1968 21.9692 17.3911C21.7998 18.4608 20.9608 19.2998 19.8911 19.4692C19.6968 19.5 19.4645 19.5 19 19.5H18.9845Z" fill="currentColor"/></g></svg>`,
+                spinner: `<svg class="btn-spinner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2A10 10 0 1 0 22 12A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8A8 8 0 0 1 12 20Z" opacity=".5"/><path fill="currentColor" d="M12 4A8 8 0 0 0 4 12a1 1 0 0 0 2 0A6 6 0 0 1 12 6a1 1 0 0 0 0-2Z"/></svg>`,
+                success: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="m9.55 18l-5.7-5.7l1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4L9.55 18Z"/></svg>`,
+            };
+
+            const ui = {
+                container: document.getElementById('wallpaper-container'),
+                optionsMenuBtn: document.getElementById('options-menu-btn'),
+                optionsPanel: document.getElementById('options-panel'),
+                closeOptionsBtn: document.getElementById('close-options-btn'),
+                categoryContainer: document.querySelector('.category-container'),
+                modal: document.getElementById('preview-modal'),
+                modalImage: document.getElementById('modal-image'),
+                closeBtn: document.querySelector('.close-btn'),
+                thumbnailContainer: document.getElementById('thumbnail-container'),
+                modalDownloadBtn: document.getElementById('modal-download-btn'),
+                setWallpaperBtn: document.getElementById('set-wallpaper-btn'),
+                backToTopBtn: document.getElementById('back-to-top-btn'),
+                loadingIndicator: document.getElementById('loading-indicator'),
+                themeButtons: document.querySelectorAll('.option-btn[data-theme]'),
+                columnButtons: document.querySelectorAll('.option-btn[data-columns]'),
+                threedeeLookButtons: document.querySelectorAll('.option-btn[data-3dlook]'),
+                dataSaverButtons: document.querySelectorAll('.option-btn[data-saver]'),
+                dynamicLookButtons: document.querySelectorAll('.option-btn[data-dynamic-look]'),
+                dynamicAnimationButtons: document.querySelectorAll('.option-btn[data-animation]'),
+                colorThemeButtons: document.querySelectorAll('.option-btn[data-color]'),
+                eyeProtectButtons: document.querySelectorAll('.option-btn[data-eye-protect]'),
+                supermodeButtons: document.querySelectorAll('.option-btn[data-supermode]'),
+
+                renderCategories(categories) {
+                    categories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'category-btn';
+                        btn.textContent = cat.name;
+                        btn.dataset.category = cat.name;
+                        if (cat.name === 'ForYou') btn.classList.add('active');
+                        this.categoryContainer.appendChild(btn);
+                    });
+                },
+                toggleLoading(show) { this.loadingIndicator.style.display = show ? 'block' : 'none'; },
+                clearContainer() { this.container.innerHTML = ''; },
+                displayMessage(message) { this.container.innerHTML = `<p style="text-align: center; grid-column: 1 / -1;">${message}</p>`; },
+                showSkeletonLoader() {
+                    const skeletonHTML = Array(12).fill('<div class="wallpaper-item-skeleton"><div class="skeleton image-placeholder"></div><div class="skeleton text-placeholder"></div></div>').join('');
+                    this.container.innerHTML = skeletonHTML;
+                },
+                renderWallpaperBatch(wallpapers, shouldAnimate) {
+                    const fragment = document.createDocumentFragment();
+                    wallpapers.forEach((wallpaper, index) => {
+                        if (wallpaper.full || wallpaper.link) {
+                            const item = this.createWallpaperElement(wallpaper, index, shouldAnimate);
+                            fragment.appendChild(item);
+                        }
+                    });
+                    this.container.appendChild(fragment);
+                    document.querySelectorAll('img[data-src]').forEach(img => observers.image.observe(img));
+                },
+                createWallpaperElement(wallpaper, index, shouldAnimate) {
+                    const item = document.createElement('div');
+                    item.className = 'wallpaper-item';
+                    if (shouldAnimate) {
+                        item.classList.add('animate-entry');
+                        item.style.animationDelay = `${(index % config.WALLPAPERS_PER_LOAD) * 0.05}s`;
+                    } else { item.style.opacity = 1; }
+
+                    const uniqueId = wallpaper.full || wallpaper.link;
+                    const originalIndex = state.currentWallpapers.findIndex(w => (w.full || w.link) === uniqueId);
+                    const fullUrl = wallpaper.full || wallpaper.link;
+                    const thumbnailUrl = wallpaper.thumbnail || fullUrl;
+                    const minithumbUrl = wallpaper.minithumb || thumbnailUrl;
+                    const displayUrl = state.preferences.dataSaver === 'enabled' ? minithumbUrl : thumbnailUrl;
+                    const title = wallpaper.title || 'wallpaper';
+
+                    const imageWrapper = document.createElement('div');
+                    imageWrapper.className = 'wallpaper-image-wrapper';
+                    imageWrapper.innerHTML = `<img alt="${title}" data-src="${displayUrl}">`;
+                    imageWrapper.dataset.action = 'open-modal';
+                    imageWrapper.dataset.index = originalIndex;
+
+                    const downloadButton = document.createElement('button');
+                    downloadButton.className = 'download-btn';
+                    downloadButton.innerHTML = ICONS.download;
+                    downloadButton.dataset.action = 'download';
+                    downloadButton.dataset.fullUrl = fullUrl;
+                    downloadButton.dataset.title = `${title}.jpg`;
+
+                    item.appendChild(imageWrapper);
+                    item.appendChild(downloadButton);
+                    return item;
+                },
+                updateCategoryButtons(activeCategory) {
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        const isActive = btn.dataset.category === activeCategory;
+                        btn.classList.toggle('active', isActive);
+                        if (isActive) {
+                            setTimeout(() => { btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }, 100);
+                        }
+                    });
+                },
+            };
+
+            const api = {
+                categories: [
+                    { name: 'ForYou', query: null },
+                    { name: 'Popular', query: 'popular' },
+                    { name: 'Latest', query: 'latest' },
+                    { name: 'Anime', query: 'anime' },
+                    { name: 'Poster', query: 'poster' },
+                    { name: 'Art', query: 'art' },
+                    { name: 'Nature', query: 'nature' },
+                    { name: 'Games', query: 'games' },
+                    { name: 'Cars', query: 'cars' },
+                    { name: 'Amoled', query: 'amoled' }
+                ],
+                async fetchCategory(categoryName) {
+                    const cachedData = sessionStorage.getItem(`cache_${categoryName}`);
+                    if (cachedData) return JSON.parse(cachedData);
+
+                    if (categoryName === 'ForYou') return this.fetchForYou();
+
+                    const category = this.categories.find(c => c.name === categoryName);
+                    if (!category) throw new Error(`No query for ${categoryName}`);
+
+                    const response = await fetch(`${config.API_BASE_URL}/?category=${category.query}`);
+                    if (!response.ok) throw new Error(`Network error for ${categoryName}`);
+
+                    const filenames = await response.json();
+                    const wallpapers = this.transformApiData(filenames);
+
+                    sessionStorage.setItem(`cache_${categoryName}`, JSON.stringify(wallpapers));
+                    return wallpapers;
+                },
+                async fetchForYou() {
+                    const popularWallpapers = await this.fetchCategory('Popular');
+                    helpers.shuffleArray(popularWallpapers);
+                    sessionStorage.setItem('cache_ForYou', JSON.stringify(popularWallpapers));
+                    return popularWallpapers;
+                },
+                transformApiData(filenames) {
+                    if (!Array.isArray(filenames)) return [];
+                    const imageRegex = /\.(jpe?g|png|webp)$/i;
+
+                    return filenames
+                        .filter(filename => imageRegex.test(filename))
+                        .map(filename => {
+                            const title = filename.split('/').pop().split('.')[0].replace(/_/g, ' ').replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase());
+                            const fileUrl = `${config.IMAGE_BASE_URL}/${filename}`;
+                            return {
+                                minithumb: fileUrl,
+                                thumbnail: fileUrl,
+                                full: fileUrl,
+                                title: title
+                            };
+                        });
+                },
+            };
+
+            const modalHandler = {
+                open(startIndex) {
+                    state.currentModalIndex = startIndex;
+                    ui.thumbnailContainer.innerHTML = '';
+                    state.currentWallpapers.forEach((wallpaper, index) => {
+                        const thumbImg = document.createElement('img');
+                        thumbImg.className = 'thumbnail-img';
+                        thumbImg.dataset.index = index;
+                        thumbImg.dataset.src = wallpaper.thumbnail || wallpaper.link;
+                        thumbImg.onclick = () => this.show(index);
+                        ui.thumbnailContainer.appendChild(thumbImg);
+                        observers.thumbnail.observe(thumbImg);
+                    });
+                    this.show(startIndex);
+                    ui.modal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                    document.addEventListener('keydown', this.handleKeydown);
+                },
+                show(index) {
+                    state.currentModalIndex = index;
+                    const wallpaper = state.currentWallpapers[index];
+                    if (!wallpaper) return;
+                    const fullUrl = wallpaper.full || wallpaper.link;
+                    const title = wallpaper.title || 'wallpaper';
+                    ui.modalImage.src = fullUrl;
+                    ui.modalDownloadBtn.innerHTML = `${ICONS.download} Download`;
+                    ui.setWallpaperBtn.innerHTML = `${ICONS.setWallpaper} Set Wallpaper`;
+                    ui.modalDownloadBtn.onclick = () => helpers.downloadImage(fullUrl, `${title}.jpg`, ui.modalDownloadBtn);
+                    if (helpers.isMobile()) {
+                        ui.setWallpaperBtn.style.display = 'flex';
+                        ui.setWallpaperBtn.onclick = () => helpers.setWallpaper(fullUrl, ui.setWallpaperBtn);
+                    } else { ui.setWallpaperBtn.style.display = 'none'; }
+                    document.querySelectorAll('.thumbnail-img').forEach(img => { img.classList.toggle('active', parseInt(img.dataset.index) === index); });
+                    const activeThumbnail = document.querySelector(`.thumbnail-img.active`);
+                    if (activeThumbnail) activeThumbnail.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                },
+                close() {
+                    ui.modal.classList.remove('show');
+                    document.body.style.overflow = '';
+                    document.removeEventListener('keydown', modalHandler.handleKeydown);
+                },
+                handleKeydown(e) {
+                    if (e.key === 'ArrowRight') {
+                        state.currentModalIndex = (state.currentModalIndex + 1) % state.currentWallpapers.length;
+                        modalHandler.show(state.currentModalIndex);
+                    } else if (e.key === 'ArrowLeft') {
+                        state.currentModalIndex = (state.currentModalIndex - 1 + state.currentWallpapers.length) % state.currentWallpapers.length;
+                        modalHandler.show(state.currentModalIndex);
+                    } else if (e.key === 'Escape') {
+                        modalHandler.close();
+                    }
+                },
+                handleTouchStart(e) { state.touchStartX = e.changedTouches[0].screenX; },
+                handleTouchEnd(e) {
+                    state.touchEndX = e.changedTouches[0].screenX;
+                    if (state.touchEndX < state.touchStartX - 50) this.handleKeydown({key: 'ArrowRight'});
+                    if (state.touchEndX > state.touchStartX + 50) this.handleKeydown({key: 'ArrowLeft'});
+                }
+            };
+
+            const preferencesHandler = {
+                apply() {
+                    this.setColorTheme(state.preferences.colorTheme);
+                    this.setTheme(state.preferences.theme);
+                    this.setColumnCount(state.preferences.layout);
+                    this.set3dLook(state.preferences.threedee);
+                    this.setDataSaver(state.preferences.dataSaver);
+                    this.setDynamicLook(state.preferences.dynamicLook);
+                    this.setDynamicAnimation(state.preferences.dynamicAnimation);
+                    this.setEyeProtect(state.preferences.eyeProtect);
+                },
+                load() {
+                    state.preferences.theme = localStorage.getItem('theme') || 'premium';
+                    state.preferences.layout = localStorage.getItem('columnLayout') || 'auto';
+                    state.preferences.threedee = localStorage.getItem('3dLook') || 'default';
+                    state.preferences.dataSaver = localStorage.getItem('dataSaverMode') || 'default';
+                    state.preferences.dynamicLook = localStorage.getItem('dynamicLook') || 'general';
+                    state.preferences.dynamicAnimation = localStorage.getItem('dynamicAnimation') || 'none';
+                    state.preferences.colorTheme = localStorage.getItem('colorTheme') || '#00BCD4';
+                    state.preferences.eyeProtect = localStorage.getItem('eyeProtect') || 'auto';
+                    this.apply();
+                },
+                setColorTheme(color){
+                    state.preferences.colorTheme = color;
+                    document.documentElement.style.setProperty('--accent-color', color);
+                    localStorage.setItem('colorTheme', color);
+                    ui.colorThemeButtons.forEach(btn => {
+                        btn.classList.toggle('active-btn-style', btn.dataset.color === color);
+                        btn.style.setProperty('--color', btn.dataset.color);
+                    });
+                },
+                setTheme(theme) {
+                    if ((theme === 'premium' || theme === 'dark') && state.preferences.dynamicLook === 'dynamic') this.setDynamicLook('general');
+                    state.preferences.theme = theme;
+                    document.body.classList.remove('premium-mode', 'dark-mode');
+                    if (theme === 'premium') document.body.classList.add('premium-mode');
+                    else if (theme === 'dark') document.body.classList.add('dark-mode');
+                    localStorage.setItem('theme', theme);
+                    ui.themeButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.theme === theme));
+                    const metaColor = theme === 'light' ? '#f0f0f0' : (theme === 'premium' ? '#2A3440' : '#000000');
+                    document.getElementById('theme-color-meta').setAttribute('content', metaColor);
+                    if ((theme === 'premium' || theme === 'dark') && state.preferences.eyeProtect === 'on') this.setEyeProtect('auto');
+                },
+                setEyeProtect(mode) {
+                    if (mode === 'on' && (state.preferences.theme === 'premium' || state.preferences.theme === 'dark')) this.setTheme('light');
+                    state.preferences.eyeProtect = mode;
+                    document.body.classList.toggle('eye-protect-on', mode === 'on');
+                    localStorage.setItem('eyeProtect', mode);
+                    ui.eyeProtectButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.eyeProtect === mode));
+                },
+                setColumnCount(count) {
+                    state.preferences.layout = count;
+                    ui.container.dataset.layout = count;
+                    localStorage.setItem('columnLayout', count);
+                    ui.columnButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.columns === count));
+                },
+                set3dLook(mode) {
+                    state.preferences.threedee = mode;
+                    document.body.classList.toggle('threedee-mode', mode === 'enabled');
+                    localStorage.setItem('3dLook', mode);
+                    ui.threedeeLookButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset['3dlook'] === mode));
+                },
+                setDataSaver(mode) {
+                    const oldMode = state.preferences.dataSaver;
+                    state.preferences.dataSaver = mode;
+                    localStorage.setItem('dataSaverMode', mode);
+                    ui.dataSaverButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.saver === mode));
+                    if (state.currentCategory && oldMode !== mode) app.loadCategory(state.currentCategory, true);
+                },
+                setDynamicLook(mode) {
+                    if (mode === 'dynamic' && (state.preferences.theme === 'premium' || state.preferences.theme === 'dark')) this.setTheme('light');
+                    state.preferences.dynamicLook = mode;
+                    document.body.classList.toggle('dynamic-look', mode === 'dynamic');
+                    if (mode === 'dynamic' && state.preferences.dynamicAnimation !== 'none') document.body.classList.add('live-background-on', `anim-${state.preferences.dynamicAnimation}`);
+                    else document.body.classList.remove('live-background-on', 'anim-gradient', 'anim-stars');
+                    localStorage.setItem('dynamicLook', mode);
+                    ui.dynamicLookButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.dynamicLook === mode));
+                },
+                setDynamicAnimation(mode) {
+                    state.preferences.dynamicAnimation = mode;
+                    document.body.classList.remove('live-background-on', 'anim-gradient', 'anim-stars');
+                    if (state.preferences.dynamicLook === 'dynamic' && mode !== 'none') document.body.classList.add('live-background-on', `anim-${mode}`);
+                    localStorage.setItem('dynamicAnimation', mode);
+                    ui.dynamicAnimationButtons.forEach(btn => btn.classList.toggle('active-btn-style', btn.dataset.animation === mode));
+                },
+                resetToDefaults() {
+                    this.setTheme('premium');
+                    this.setEyeProtect('auto');
+                    this.setColorTheme('#00BCD4');
+                    this.setColumnCount('auto');
+                    this.set3dLook('default');
+                    this.setDynamicLook('general');
+                    this.setDynamicAnimation('none');
+                    this.setDataSaver('default');
+                },
+                setPerformanceMode() {
+                    this.resetToDefaults();
+                    this.setDynamicLook('dynamic');
+                }
+            };
+
+            const helpers = {
+                shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } },
+                isMobile() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); },
+                createRipple(event) {
+                    const button = event.currentTarget;
+                    const circle = document.createElement("span");
+                    const diameter = Math.max(button.clientWidth, button.clientHeight);
+                    const radius = diameter / 2;
+                    circle.style.width = circle.style.height = `${diameter}px`;
+                    circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+                    circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+                    circle.classList.add("ripple");
+                    const ripple = button.querySelector(".ripple");
+                    if (ripple) ripple.remove();
+                    button.appendChild(circle);
+                },
+                showToast(message, type = 'success') {
+                    const toastContainer = document.getElementById('toast-container');
+                    const toast = document.createElement('div');
+                    toast.className = `toast ${type}`;
+                    toast.textContent = message;
+                    toastContainer.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => { toast.classList.remove('show'); toast.addEventListener('transitionend', () => toast.remove()); }, 3000);
+                },
+                async downloadImage(url, filename) {
+                    if (window.Android?.downloadFile) {
+                        window.Android.downloadFile(url, filename);
+                        this.showToast('Download started!', 'success');
+                        return;
+                    }
+                    try {
+                        const a = document.createElement('a');
+                        a.href = url; a.download = filename; a.target = '_blank';
+                        document.body.appendChild(a); a.click(); a.remove();
+                        this.showToast('Download has been initiated.', 'success');
+                    } catch (error) { this.showToast('Download failed. Please try again.', 'error'); }
+                },
+                setWallpaper(url, button) {
+                    const originalContent = button.innerHTML;
+                    button.innerHTML = `${ICONS.spinner} Setting...`;
+                    button.disabled = true;
+                    window.onWallpaperSetResult = (success) => {
+                        if (success) {
+                            button.innerHTML = `${ICONS.success} Set`;
+                            this.showToast('Wallpaper set successfully!', 'success');
+                        } else {
+                            button.innerHTML = originalContent;
+                            this.showToast('Failed to set wallpaper.', 'error');
+                        }
+                        setTimeout(() => { button.innerHTML = originalContent; button.disabled = false; }, 2500);
+                        window.onWallpaperSetResult = null;
+                    };
+                    if (window.Android?.setWallpaper) {
+                        try {
+                            window.Android.setWallpaper(url);
+                            setTimeout(() => { if (typeof window.onWallpaperSetResult === 'function') window.onWallpaperSetResult(true); }, 2500);
+                        } catch (err) { if (typeof window.onWallpaperSetResult === 'function') window.onWallpaperSetResult(false); }
+                    } else {
+                        this.showToast('Feature only available on Android app.', 'error');
+                        if (typeof window.onWallpaperSetResult === 'function') window.onWallpaperSetResult(false);
+                    }
+                }
+            };
+
+            const observers = {
+                image: new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            const src = img.dataset.src;
+                            if (src) {
+                                img.onload = () => img.classList.add('loaded');
+                                img.onerror = () => img.classList.add('loaded');
+                                img.src = src;
+                                img.removeAttribute('data-src');
+                                if(img.complete) img.classList.add('loaded');
+                            }
+                            observer.unobserve(img);
+                        }
+                    });
+                }, { rootMargin: '0px 0px 500px 0px' }),
+                thumbnail: new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const thumb = entry.target;
+                            if (thumb.dataset.src) { thumb.src = thumb.dataset.src; thumb.removeAttribute('data-src'); }
+                            observer.unobserve(thumb);
+                        }
+                    });
+                }, { root: ui.thumbnailContainer, rootMargin: '50px' }),
+                loadMore: new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && !state.isLoading) app.loadMoreWallpapers();
+                }, { rootMargin: '0px 0px 400px 0px' }),
+            };
+
+            const eventListeners = {
+                init() {
+                    window.addEventListener('scroll', this.handleScroll, { passive: true });
+                    ui.backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+                    ui.categoryContainer.addEventListener('click', (e) => {
+                        if (e.target.matches('.category-btn')) app.loadCategory(e.target.dataset.category);
+                    });
+                    ui.optionsMenuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isOpening = !ui.optionsPanel.classList.contains('show');
+                        ui.optionsPanel.classList.toggle('show');
+                        ui.optionsMenuBtn.classList.toggle('active', isOpening);
+                    });
+                    ui.closeOptionsBtn.addEventListener('click', () => {
+                        ui.optionsPanel.classList.remove('show');
+                        ui.optionsMenuBtn.classList.remove('active');
+                    });
+                    document.addEventListener('click', (e) => {
+                        if (!ui.optionsPanel.contains(e.target) && !ui.optionsMenuBtn.contains(e.target)) {
+                            ui.optionsPanel.classList.remove('show');
+                            ui.optionsMenuBtn.classList.remove('active');
+                        }
+                    });
+                    ui.closeBtn.addEventListener('click', modalHandler.close);
+                    ui.modal.addEventListener('click', (e) => { if (e.target === ui.modal) modalHandler.close(); });
+                    document.getElementById('modal-swipe-area').addEventListener('touchstart', (e) => modalHandler.handleTouchStart(e), {passive: true});
+                    document.getElementById('modal-swipe-area').addEventListener('touchend', (e) => modalHandler.handleTouchEnd(e), {passive: true});
+
+                    this.setupPreferenceButtons();
+                    this.setupRippleEffectForButtons();
+                    this.setupWallpaperContainerActions();
+                },
+                setupPreferenceButtons() {
+                    ui.themeButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setTheme(btn.dataset.theme)));
+                    ui.columnButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setColumnCount(btn.dataset.columns)));
+                    ui.threedeeLookButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.set3dLook(btn.dataset['3dlook'])));
+                    ui.dataSaverButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setDataSaver(btn.dataset.saver)));
+                    ui.dynamicLookButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setDynamicLook(btn.dataset.dynamicLook)));
+                    ui.dynamicAnimationButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setDynamicAnimation(btn.dataset.animation)));
+                    ui.colorThemeButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setColorTheme(btn.dataset.color)));
+                    ui.eyeProtectButtons.forEach(btn => btn.addEventListener('click', () => preferencesHandler.setEyeProtect(btn.dataset.eyeProtect)));
+                    ui.supermodeButtons.forEach(btn => btn.addEventListener('click', () => {
+                        const mode = btn.dataset.supermode;
+                        if (mode === 'reset') preferencesHandler.resetToDefaults();
+                        else if (mode === 'dynamicDark') {
+                            preferencesHandler.setPerformanceMode();
+                            ui.optionsPanel.classList.remove('show');
+                            ui.optionsMenuBtn.classList.remove('active');
+                        }
+                    }));
+                },
+                setupRippleEffectForButtons() {
+                    const buttons = document.querySelectorAll('.category-btn, .download-btn, .modal-action-btn, .header-icon-btn, .option-btn');
+                    buttons.forEach(button => button.addEventListener('click', helpers.createRipple));
+                },
+                setupWallpaperContainerActions() {
+                    ui.container.addEventListener('click', (e) => {
+                        const target = e.target.closest('[data-action]');
+                        if (!target) return;
+                        e.stopPropagation();
+                        const action = target.dataset.action;
+                        if (action === 'open-modal') modalHandler.open(parseInt(target.dataset.index, 10));
+                        else if (action === 'download') helpers.downloadImage(target.dataset.fullUrl, target.dataset.title, target);
+                    });
+                    ui.container.addEventListener('mousemove', e => {
+                        state.lastMouseEvent = e;
+                        if (!state.isMouseMoving) {
+                            window.requestAnimationFrame(() => {
+                                this.handle3dMouseMove(state.lastMouseEvent);
+                                state.isMouseMoving = false;
+                            });
+                            state.isMouseMoving = true;
+                        }
+                    });
+                    ui.container.addEventListener('mouseleave', this.handle3dMouseLeave);
+                },
+                handleScroll() {
+                    ui.backToTopBtn.classList.toggle('show', window.pageYOffset > 300);
+                    if (!state.isScrolling) {
+                        window.requestAnimationFrame(() => {
+                            eventListeners.throttled3dScroll();
+                            state.isScrolling = false;
+                        });
+                        state.isScrolling = true;
+                    }
+                },
+                throttled3dScroll() {
+                    if (!document.body.classList.contains('threedee-mode') || helpers.isMobile()) return;
+                    const items = ui.container.querySelectorAll('.wallpaper-image-wrapper');
+                    const viewportCenterY = window.innerHeight / 2;
+                    items.forEach(wrapper => {
+                        const rect = wrapper.getBoundingClientRect();
+                        if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+                        const itemCenterY = rect.top + rect.height / 2;
+                        const maxRotate = 10;
+                        const rotateX = ((viewportCenterY - itemCenterY) / viewportCenterY) * maxRotate * -1;
+                        wrapper.style.transform = `perspective(1000px) rotateX(${rotateX}deg)`;
+                    });
+                },
+                handle3dMouseMove(e) {
+                    if (!document.body.classList.contains('threedee-mode') || helpers.isMobile() || !e) return;
+                    const item = e.target.closest('.wallpaper-item');
+                    if (!item) return;
+                    const wrapper = item.querySelector('.wallpaper-image-wrapper');
+                    const rect = item.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const maxRotate = 8;
+                    const rotateY = (((e.clientX - rect.left) - centerX) / centerX) * maxRotate;
+                    const rotateX = -(((e.clientY - rect.top) - centerY) / centerY) * maxRotate;
+                    wrapper.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+                },
+                handle3dMouseLeave() {
+                    if (!document.body.classList.contains('threedee-mode') || helpers.isMobile()) return;
+                    this.throttled3dScroll();
+                }
+            };
+
+            const app = {
+                init() {
+                    ui.colorThemeButtons.forEach(btn => { btn.style.backgroundColor = btn.dataset.color; });
+                    eventListeners.init();
+                    ui.renderCategories(api.categories);
+                    preferencesHandler.load();
+                    observers.loadMore.observe(ui.loadingIndicator);
+                    this.loadCategory('ForYou');
+                },
+                async loadCategory(categoryName, forceReload = false) {
+                    if (forceReload) {
+                        sessionStorage.removeItem(`cache_${categoryName}`);
+                        if (categoryName === 'ForYou') sessionStorage.removeItem(`cache_Popular`);
+                    }
+                    state.currentCategory = categoryName;
+                    state.renderedCount = 0;
+                    state.displayedWallpapers = [];
+                    if (categoryName === 'ForYou' && !forceReload) window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                    ui.updateCategoryButtons(categoryName);
+                    ui.clearContainer();
+                    ui.toggleLoading(true);
+
+                    try {
+                        const wallpapers = await api.fetchCategory(categoryName);
+                        state.currentWallpapers = wallpapers;
+                        state.displayedWallpapers = wallpapers;
+                        ui.clearContainer();
+                        if (state.displayedWallpapers.length === 1) ui.container.classList.add('single-item-layout');
+                        else ui.container.classList.remove('single-item-layout');
+                        
+                        if (state.displayedWallpapers.length > 0) this.loadMoreWallpapers(true);
+                        else ui.displayMessage('No wallpapers found in this category.');
+                    } catch (error) {
+                        ui.clearContainer();
+                        ui.displayMessage('Failed to load wallpapers. Please check your connection and try again.');
+                    } finally { ui.toggleLoading(false); }
+                },
+                loadMoreWallpapers(isInitialLoad = false) {
+                    if (state.isLoading || (state.renderedCount >= state.displayedWallpapers.length && !isInitialLoad)) return;
+                    state.isLoading = true;
+                    const batch = state.displayedWallpapers.slice(state.renderedCount, state.renderedCount + config.WALLPAPERS_PER_LOAD);
+                    if (batch.length > 0) {
+                        ui.renderWallpaperBatch(batch, isInitialLoad);
+                        state.renderedCount += batch.length;
+                    }
+                    ui.toggleLoading(state.renderedCount < state.displayedWallpapers.length);
+                    state.isLoading = false;
+                },
+            };
+            app.init();
+        });
+    </script>
+</body>
+</html>
